@@ -1,5 +1,6 @@
 using FootballTransfers.Application.DTOs;
 using FootballTransfers.Application.Interfaces;
+using FootballTransfers.Application.Pagination;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FootballTransfers.API.Controllers
@@ -65,6 +66,12 @@ namespace FootballTransfers.API.Controllers
             {
                 return NotFound(e.Message);
             }
+        }
+        [HttpGet("paged")]
+        public async Task<IActionResult> GetPaged([FromQuery] AgentFilterParams filterParams)
+        {
+            var result = await _agentService.GetPagedAsync(filterParams);
+            return Ok(result);
         }
     }
 }

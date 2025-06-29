@@ -1,5 +1,6 @@
 using FootballTransfers.Application.DTOs;
 using FootballTransfers.Application.Interfaces;
+using FootballTransfers.Application.Pagination;
 using FootballTransfers.Core.Entities;
 using FootballTransfers.Core.Interfaces;
 
@@ -87,5 +88,45 @@ namespace FootballTransfers.Application.Services
             await _unitOfWork.Agents.DeleteAsync(id);
             await _unitOfWork.SaveChangesAsync();
         }
+        public async Task<PagedResult<AgentDto>> GetPagedAsync(AgentFilterParams filter)
+            {
+                var query = await _unitOfWork.Agents.GetAllAsync();
+                var filtered = query.AsQueryable();
+
+                filtered = filter.SortBy?.ToLower() switch
+                {
+                    "firstname" => filter.Descending ? filtered.OrderByDescending(a => a.FirstName) : filtered.OrderBy(a => a.FirstName),
+                    "lastname" => filter.Descending ? filtered.OrderByDescending(a => a.LastName) : filtered.OrderBy(a => a.LastName),
+                    _ => filtered
+                };
+
+                var total = filtered.Count();
+                var items = filtered
+                    .Skip((filter.PageNumber - 1) * filter.PageSize)
+                    .Take(filter.PageSize)
+                    .ToList();
+
+                var result = items.Select(a => new AgentDto
+                {
+                    Id = a.Id,
+                    FirstName = a.FirstName,
+                    LastName = a.LastName,
+                    Company = a.Company,
+                    Email = a.Email,
+                    Phone = a.Phone,
+                    PlayersCount = a.Players.Count,
+                    CreatedAt = a.CreatedAt,
+                    UpdatedAt = a.UpdatedAt
+                }).ToList();
+
+                return new PagedResult<AgentDto>
+                {
+                    Items = result,
+                    TotalCount = total,
+                    PageNumber = filter.PageNumber,
+                    PageSize = filter.PageSize
+                };
+            }
+
     }
 }

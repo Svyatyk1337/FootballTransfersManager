@@ -1,5 +1,6 @@
 using FootballTransfers.Application.DTOs;
 using FootballTransfers.Application.Interfaces;
+using FootballTransfers.Application.Pagination;
 using FootballTransfers.Core.Entities;
 using FootballTransfers.Core.Interfaces;
 
@@ -93,5 +94,42 @@ namespace FootballTransfers.Application.Services
             await _unitOfWork.Clubs.DeleteAsync(id);
             await _unitOfWork.SaveChangesAsync();
         }
+        public async Task<PagedResult<ClubDto>> GetPagedAsync(ClubFilterParams filter)
+            {
+                var query = await _unitOfWork.Clubs.GetAllAsync();
+                var filtered = query.AsQueryable();
+
+                filtered = filter.SortBy?.ToLower() switch
+                {
+                    "name" => filter.Descending ? filtered.OrderByDescending(c => c.Name) : filtered.OrderBy(c => c.Name),
+                    _ => filtered
+                };
+
+                var total = filtered.Count();
+                var items = filtered
+                    .Skip((filter.PageNumber - 1) * filter.PageSize)
+                    .Take(filter.PageSize)
+                    .ToList();
+
+                var result = items.Select(c => new ClubDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Country = c.Country,
+                    Founded = c.Founded,
+                    Stadium = c.Stadium,
+                    CreatedAt = c.CreatedAt,
+                    UpdatedAt = c.UpdatedAt
+                }).ToList();
+
+                return new PagedResult<ClubDto>
+                {
+                    Items = result,
+                    TotalCount = total,
+                    PageNumber = filter.PageNumber,
+                    PageSize = filter.PageSize
+                };
+            }
+
     }
 }

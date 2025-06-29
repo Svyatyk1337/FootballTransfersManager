@@ -1,4 +1,5 @@
 using FootballTransfers.Application.DTOs;
+using FootballTransfers.Application.Pagination;
 
 namespace FootballTransfers.Application.Interfaces
 {
@@ -9,5 +10,7 @@ namespace FootballTransfers.Application.Interfaces
         Task<AgentDto> CreateAsync(CreateAgentDto dto);
         Task UpdateAsync(int id, UpdateAgentDto dto);
         Task DeleteAsync(int id);
+
+        Task<PagedResult<AgentDto>> GetPagedAsync(AgentFilterParams filter);
     }
 }

@@ -1,5 +1,6 @@
 using FootballTransfers.Application.DTOs;
 using FootballTransfers.Application.Interfaces;
+using FootballTransfers.Application.Pagination;
 using FootballTransfers.Core.Entities;
 using FootballTransfers.Core.Interfaces;
 
@@ -101,5 +102,59 @@ namespace FootballTransfers.Application.Services
             await _unitOfWork.Transfers.DeleteAsync(id);
             await _unitOfWork.SaveChangesAsync();
         }
+        public async Task<PagedResult<TransferDto>> GetPagedAsync(TransferFilterParams filter)
+            {
+                var query = await _unitOfWork.Transfers.GetAllAsync();
+                var filtered = query.AsQueryable();
+
+                if (filter.MinFee.HasValue)
+                    filtered = filtered.Where(t => t.TransferFee >= filter.MinFee.Value);
+
+                if (filter.MaxFee.HasValue)
+                    filtered = filtered.Where(t => t.TransferFee <= filter.MaxFee.Value);
+
+                if (filter.FromDate.HasValue)
+                    filtered = filtered.Where(t => t.TransferDate >= filter.FromDate.Value);
+
+                if (filter.ToDate.HasValue)
+                    filtered = filtered.Where(t => t.TransferDate <= filter.ToDate.Value);
+
+                filtered = filter.SortBy?.ToLower() switch
+                {
+                    "transferfee" => filter.Descending ? filtered.OrderByDescending(t => t.TransferFee) : filtered.OrderBy(t => t.TransferFee),
+                    "transferdate" => filter.Descending ? filtered.OrderByDescending(t => t.TransferDate) : filtered.OrderBy(t => t.TransferDate),
+                    _ => filter.Descending ? filtered.OrderByDescending(t => t.Id) : filtered.OrderBy(t => t.Id),
+                };
+
+                var total = filtered.Count();
+                var items = filtered
+                    .Skip((filter.PageNumber - 1) * filter.PageSize)
+                    .Take(filter.PageSize)
+                    .ToList();
+
+                var result = items.Select(t => new TransferDto
+                {
+                    Id = t.Id,
+                    TransferDate = t.TransferDate,
+                    TransferFee = t.TransferFee,
+                    TransferType = t.TransferType,
+                    ContractLength = t.ContractLength,
+                    Description = t.Description,
+                    IsConfirmed = t.IsConfirmed,
+                    CreatedAt = t.CreatedAt,
+                    UpdatedAt = t.UpdatedAt,
+                    Player = new PlayerDto { Id = t.Player.Id, FirstName = t.Player.FirstName, LastName = t.Player.LastName },
+                    FromClub = t.FromClub != null ? new ClubDto { Id = t.FromClub.Id, Name = t.FromClub.Name } : null,
+                    ToClub = new ClubDto { Id = t.ToClub.Id, Name = t.ToClub.Name }
+                }).ToList();
+
+            return new PagedResult<TransferDto>
+            {
+                Items = result,
+                TotalCount = total,
+                PageNumber = filter.PageNumber,
+                PageSize = filter.PageSize
+            };
+            }
     }
 }
