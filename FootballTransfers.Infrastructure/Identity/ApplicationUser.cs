@@ -1,9 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace FootballTransfers.Infrastructure.Identity
+public class ApplicationUser : IdentityUser
 {
-    public class ApplicationUser : IdentityUser
-    {
-        
-    }
+    public string? RefreshToken { get; set; }
+    public DateTime? RefreshTokenExpiryTime { get; set; }
 }

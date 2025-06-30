@@ -4,6 +4,7 @@ using FootballTransfers.Infrastructure.Identity;
 using FootballTransfers.Application.Services;
 using FootballTransfers.API.DTOs;
 using System.Threading.Tasks;
+using FootballTransfers.Application.Interfaces;
 
 namespace FootballTransfers.API.Controllers
 {
@@ -31,14 +32,11 @@ namespace FootballTransfers.API.Controllers
             var result = await _userManager.CreateAsync(user, dto.Password);
 
             if (!result.Succeeded)
-            {
                 return BadRequest(result.Errors);
-            }
 
-            // Додати роль User за замовчуванням
             await _userManager.AddToRoleAsync(user, "User");
 
-            return Ok();
+            return Ok("Registered successfully");
         }
 
         [HttpPost("login")]
@@ -53,11 +51,53 @@ namespace FootballTransfers.API.Controllers
                 return Unauthorized("Invalid email or password");
 
             var roles = await _userManager.GetRolesAsync(user);
-            var token = _tokenService.CreateToken(user, roles);
+            var accessToken = _tokenService.CreateToken(user, roles);
+            var refreshToken = _tokenService.GenerateRefreshToken();
 
-            return Ok(new { Token = token });
+            user.RefreshToken = refreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+            await _userManager.UpdateAsync(user);
+
+            return Ok(new
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken
+            });
         }
 
-        // TODO: Refresh та Logout ендпоїнти - можна додати пізніше
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh(TokenRefreshDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null || user.RefreshToken != dto.RefreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+                return Unauthorized("Invalid or expired refresh token");
+
+            var roles = await _userManager.GetRolesAsync(user);
+            var newAccessToken = _tokenService.CreateToken(user, roles);
+            var newRefreshToken = _tokenService.GenerateRefreshToken();
+
+            user.RefreshToken = newRefreshToken;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+            await _userManager.UpdateAsync(user);
+
+            return Ok(new
+            {
+                AccessToken = newAccessToken,
+                RefreshToken = newRefreshToken
+            });
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout(LogoutDto dto)
+        {
+            var user = await _userManager.FindByEmailAsync(dto.Email);
+            if (user == null) return NotFound("User not found");
+
+            user.RefreshToken = null;
+            user.RefreshTokenExpiryTime = null;
+            await _userManager.UpdateAsync(user);
+
+            return Ok("Logged out");
+        }
     }
 }
