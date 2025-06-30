@@ -1,4 +1,5 @@
 using FootballTransfers.Core.Entities;
+using FootballTransfers.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 public static class DbSeeder

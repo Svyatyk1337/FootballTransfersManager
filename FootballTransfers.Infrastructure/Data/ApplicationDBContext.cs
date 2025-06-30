@@ -1,48 +1,53 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using FootballTransfers.Core.Entities;
+using FootballTransfers.Infrastructure.Identity;
 
-public class ApplicationDbContext : DbContext
+namespace FootballTransfers.Infrastructure.Data
 {
-    public DbSet<Agent> Agents { get; set; }
-    public DbSet<Club> Clubs { get; set; }
-    public DbSet<Player> Players { get; set; }
-    public DbSet<Transfer> Transfers { get; set; }
-
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-        : base(options) { }
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
     {
-        base.OnModelCreating(modelBuilder);
+        public DbSet<Agent> Agents { get; set; }
+        public DbSet<Club> Clubs { get; set; }
+        public DbSet<Player> Players { get; set; }
+        public DbSet<Transfer> Transfers { get; set; }
 
-        modelBuilder.Entity<Transfer>()
-            .HasOne(t => t.Player)
-            .WithMany(p => p.Transfers)
-            .HasForeignKey(t => t.PlayerId)
-            .OnDelete(DeleteBehavior.Cascade);
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options) { }
 
-        modelBuilder.Entity<Transfer>()
-            .HasOne(t => t.FromClub)
-            .WithMany(c => c.TransfersFrom)
-            .HasForeignKey(t => t.FromClubId)
-            .OnDelete(DeleteBehavior.Restrict);
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Transfer>()
-            .HasOne(t => t.ToClub)
-            .WithMany(c => c.TransfersTo)
-            .HasForeignKey(t => t.ToClubId)
-            .OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Transfer>()
+                .HasOne(t => t.Player)
+                .WithMany(p => p.Transfers)
+                .HasForeignKey(t => t.PlayerId)
+                .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<Player>()
-            .HasOne(p => p.CurrentClub)
-            .WithMany(c => c.CurrentPlayers)
-            .HasForeignKey(p => p.CurrentClubId)
-            .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Transfer>()
+                .HasOne(t => t.FromClub)
+                .WithMany(c => c.TransfersFrom)
+                .HasForeignKey(t => t.FromClubId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<Player>()
-            .HasOne(p => p.Agent)
-            .WithMany(a => a.Players)
-            .HasForeignKey(p => p.AgentId)
-            .OnDelete(DeleteBehavior.SetNull);
+            modelBuilder.Entity<Transfer>()
+                .HasOne(t => t.ToClub)
+                .WithMany(c => c.TransfersTo)
+                .HasForeignKey(t => t.ToClubId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Player>()
+                .HasOne(p => p.CurrentClub)
+                .WithMany(c => c.CurrentPlayers)
+                .HasForeignKey(p => p.CurrentClubId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Player>()
+                .HasOne(p => p.Agent)
+                .WithMany(a => a.Players)
+                .HasForeignKey(p => p.AgentId)
+                .OnDelete(DeleteBehavior.SetNull);
+        }
     }
 }
