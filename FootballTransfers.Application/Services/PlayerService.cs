@@ -3,6 +3,10 @@ using FootballTransfers.Application.Interfaces;
 using FootballTransfers.Core.Entities;
 using FootballTransfers.Core.Interfaces;
 using FootballTransfers.Application.Pagination;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Linq;
+using System;
 
 namespace FootballTransfers.Application.Services
 {

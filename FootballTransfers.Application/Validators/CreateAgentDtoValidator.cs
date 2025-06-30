@@ -1,13 +1,16 @@
 using FluentValidation;
 using FootballTransfers.Application.DTOs;
 
-public class CreateAgentDtoValidator : AbstractValidator<CreateAgentDto>
+namespace FootballTransfers.Application.Validators
 {
-    public CreateAgentDtoValidator()
+    public class CreateAgentDtoValidator : AbstractValidator<CreateAgentDto>
     {
-        RuleFor(x => x.FirstName).NotEmpty().MaximumLength(50);
-        RuleFor(x => x.LastName).NotEmpty().MaximumLength(50);
-        RuleFor(x => x.Email).EmailAddress().When(x => !string.IsNullOrEmpty(x.Email));
-        RuleFor(x => x.Phone).MaximumLength(20);
+        public CreateAgentDtoValidator()
+        {
+            RuleFor(x => x.FirstName).NotEmpty().MaximumLength(50);
+            RuleFor(x => x.LastName).NotEmpty().MaximumLength(50);
+            RuleFor(x => x.Email).EmailAddress().When(x => !string.IsNullOrEmpty(x.Email));
+            RuleFor(x => x.Phone).MaximumLength(20);
+        }
     }
 }

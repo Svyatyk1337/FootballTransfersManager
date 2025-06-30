@@ -2,14 +2,19 @@ using FluentValidation;
 using FootballTransfers.Application.DTOs;
 using System;
 
-public class CreateTransferDtoValidator : AbstractValidator<CreateTransferDto>
+namespace FootballTransfers.Application.Validators
 {
-    public CreateTransferDtoValidator()
+    public class CreateTransferDtoValidator : AbstractValidator<CreateTransferDto>
     {
-        RuleFor(x => x.PlayerId).GreaterThan(0);
-        RuleFor(x => x.ToClubId).GreaterThan(0);
-        RuleFor(x => x.TransferFee).GreaterThanOrEqualTo(0);
-        RuleFor(x => x.TransferDate).LessThanOrEqualTo(DateTime.Now.AddMonths(1));
-        RuleFor(x => x.ContractLength).MaximumLength(20);
+        public CreateTransferDtoValidator()
+        {
+            RuleFor(x => x.PlayerId).GreaterThan(0);
+            RuleFor(x => x.ToClubId).GreaterThan(0);
+            RuleFor(x => x.TransferFee).GreaterThanOrEqualTo(0);
+            RuleFor(x => x.TransferDate)
+                .Must(date => date <= DateTime.Now.AddMonths(1))
+                .WithMessage("TransferDate must not be later than one month from now");
+            RuleFor(x => x.ContractLength).MaximumLength(20);
+        }
     }
 }
